@@ -1,22 +1,20 @@
 ﻿namespace GnomeSort.Sorters;
 
-public class SequentialHybridGnomeMergeSorter<T> : GnomeSorter<T> where T : IComparable<T>
+public class SequentialHybridHybridGnomeMergeSorter<T> : HybridGnomeMerge<T> where T : IComparable<T>
 {
-    private int _segmentSize;
-    
     public T[] Sort(T[] array)
     {
         ValidateParameters(array);
-        _segmentSize = CalculateOptimalSegmentSize(array);
-        var numberOfSegments = (int)Math.Ceiling((double)array.Length / _segmentSize);
+        var segmentSize = CalculateOptimalSegmentSize(array);
+        var numberOfSegments = (int)Math.Ceiling((double)array.Length / segmentSize);
         
         var segmentData = new T[array.Length];
         var segments = new ArraySegment<T>[numberOfSegments];
 
         for (var i = 0; i < numberOfSegments; i++)
         {
-            var start = i * _segmentSize;
-            var end = Math.Min(start + _segmentSize, array.Length);
+            var start = i * segmentSize;
+            var end = Math.Min(start + segmentSize, array.Length);
         
             segments[i] = new ArraySegment<T>(segmentData, start, end - start); 
             Array.Copy(array, start, segmentData, start, end - start); 

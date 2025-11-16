@@ -1,12 +1,7 @@
 ﻿namespace GnomeSort.Sorters;
 
-public abstract class GnomeSorter<T> where T : IComparable<T>
+public abstract class HybridGnomeMerge<T> where T : IComparable<T>
 {
-    protected void GnomeSort(T[] array)
-    {
-        GnomeSort(array, 0, array.Length - 1);
-    }
-    
     protected void GnomeSort(T[] array, int startIndex, int endIndex)
     {
         var currentIndex = startIndex + 1;
@@ -28,43 +23,45 @@ public abstract class GnomeSorter<T> where T : IComparable<T>
 
     protected T[] MergeSegments(ArraySegment<T>[] segments)
     {
-        var result = new T[segments.Sum(s => s.Count)];
-        var indices = new int[segments.Length]; 
-
-        var resultIndex = 0;
-        T minValue = default;
-
-        while (true)
+        if (segments.Length == 1)
         {
-            var minSegmentIndex = -1;
+            return segments[0].Array;
+        }
+        
+        var mergedArray = new T[segments[0].Array!.Length];
+        var minHeap = new SortedSet<(T Value, int SegmentIndex, int IndexInSegment)>
+        (Comparer<(T, int, int)>.Create((a, b) =>
+        {
+            var comparison = a.Item1.CompareTo(b.Item1);
+            return comparison != 0 
+                ? comparison : a.Item2.CompareTo(b.Item2);
+        }));
 
-            for (var i = 0; i < segments.Length; i++)
+        for (var i = 0; i < segments.Length; i++)
+        {
+            if (segments[i].Count > 0)
             {
-                if (indices[i] >= segments[i].Count)
-                {
-                    continue;
-                }
-
-                if (minSegmentIndex != -1 && 
-                    segments[i].Array![segments[i].Offset + indices[i]].CompareTo(minValue) >= 0)
-                {
-                    continue;
-                }
-
-                minValue = segments[i].Array![segments[i].Offset + indices[i]];
-                minSegmentIndex = i;
+                minHeap.Add((segments[i].Array![segments[i].Offset], i, 0));
             }
-
-            if (minSegmentIndex == -1)
-            {
-                break;
-            }
-
-            result[resultIndex++] = minValue;
-            indices[minSegmentIndex]++;
         }
 
-        return result;
+        var mergedIndex = 0;
+
+        while (minHeap.Count > 0)
+        {
+            var (smallestValue, segmentIndex, indexInSegment) = minHeap.Min;
+            minHeap.Remove(minHeap.Min);
+            mergedArray[mergedIndex++] = smallestValue;
+            var nextIndexInSegment = indexInSegment + 1;
+            
+            if (nextIndexInSegment < segments[segmentIndex].Count)
+            {
+                minHeap.Add((segments[segmentIndex].Array![segments[segmentIndex]
+                    .Offset + nextIndexInSegment], segmentIndex, nextIndexInSegment));
+            }
+        }
+
+        return mergedArray;
     }
 
     protected int CalculateOptimalSegmentSize(T[] array)
